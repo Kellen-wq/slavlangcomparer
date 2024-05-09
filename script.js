@@ -1,27 +1,34 @@
-let button = document.querySelector('button');
-document.querySelector('button').onclick = write;
+const targetLanguages = ['be', 'uk', 'pl', 'cs', 'hr', 'bs','sk','sl','sr', 'bg','mk'];
 
 function formatText(text) {
-    //let noPunctuation = text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-    let capitalized = text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-    return capitalized ;
+  return text.trim().replace(/[^\w\s]/gi, '').toLocaleUpperCase();
 }
 
+async function translateText(fromText, targetLanguage) {
+  const apiURL = `https://api.mymemory.translated.net/get?q=${fromText}!&langpair=ru|${targetLanguage}`;
+  try {
+    const response = await fetch(apiURL);
+    const data = await response.json();
+    return formatText(data.responseData.translatedText);
+  } catch (error) {
+    console.error(`Error translating to ${targetLanguage}:`, error);
+    return '';
+  }
+}
+
+function updateDOM(translateResults) {
+  Object.keys(translateResults).forEach((targetLanguage) => {
+    document.querySelector(`.${targetLanguage}`).textContent = translateResults[targetLanguage];
+  });
+  document.getElementById('result').style.display = 'inline-flex';
+}
 
 function write() {
-    let fromtext = document.querySelector('.wordInsert').value;
-    const targetLanguages = ['be', 'uk', 'pl', 'cs','hr', 'bs', 'sk', 'sl', 'sr', 'bg', 'mk'];
-    targetLanguages.forEach(targetLanguage => {
-        let apiURL = `https://api.mymemory.translated.net/get?q=${fromtext}!&langpair=ru|${targetLanguage}`;
-        fetch(apiURL).then(res => res.json()).then(data => {
-            let translate = data.responseData.translatedText;
-	    translate = formatText(translate);
-            console.log (translate);
-            document.querySelector(`.${targetLanguage}`).innerHTML = translate;
-        });
-    });
-    if (document.getElementById('result').style.display != 'inline-flex') {
-        document.getElementById('result').style.display = 'inline-flex';
-    }
-    return true;
+  const fromText = document.querySelector('.wordInsert').value;
+  const translateResults = {};
+  targetLanguages.forEach((targetLanguage) => {
+    translateResults[targetLanguage] = translateText(fromText, targetLanguage);
+  });
+  updateDOM(translateResults);
+  return true;
 }
