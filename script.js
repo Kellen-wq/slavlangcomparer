@@ -1,7 +1,11 @@
 const targetLanguages = ['be', 'uk', 'pl', 'cs', 'hr', 'bs','sk','sl','sr', 'bg','mk'];
 
 function formatText(text) {
-  return text.trim().replace(/[^\w\s]/gi, '').split(' ')[0].toLocaleLowerCase();
+  return text.trim()
+   .replace(/[^\w\s]/gi, '') // remove punctuation
+   .replace(/\s+/g,'') // remove extra spaces
+   .split(' ')[0] // take only the first word
+   .toLocaleLowerCase(); // convert to lowercase
 }
 
 async function translateText(fromText, targetLanguage) {
@@ -15,17 +19,55 @@ async function translateText(fromText, targetLanguage) {
     return '';
   }
 }
-
 function compareSimilarity(fromText, translatedText) {
-  const fromTextArray = fromText.toLowerCase().split('');
-  const translatedTextArray = translatedText.toLowerCase().split('');
-  let similarity = 0;
-  for (let i = 0; i < fromTextArray.length; i++) {
-    if (translatedTextArray.includes(fromTextArray[i])) {
-      similarity++;
+  const fromTextNormalized = fromText.normalize('NFKD').casefold();
+  const translatedTextNormalized = translatedText.normalize('NFKD').casefold();
+
+  const jaroWinklerDistance = jaroWinkler(fromTextNormalized, translatedTextNormalized);
+  const similarity = Math.round((1 - jaroWinklerDistance) * 100);
+
+  return similarity;
+}
+
+function jaroWinkler(a, b) {
+  const m = Math.min(a.length, b.length);
+  const p = 0.1;
+  let l = 0;
+  let r = 0;
+  let t = 0;
+
+  for (let i = 0; i < a.length; i++) {
+    for (let j = 0; j < b.length; j++) {
+      if (a[i] === b[j]) {
+        l++;
+        t++;
+        break;
+      }
     }
   }
-  return Math.round((similarity / fromTextArray.length) * 100);
+
+  if (l === 0) return 0;
+
+  r = (a.length + b.length) / 2;
+  l = l / r;
+
+  let p1 = l;
+  let p2 = l;
+
+  for (let i = 0; i < a.length; i++) {
+    for (let j = 0; j < b.length; j++) {
+      if (a[i] === b[j]) {
+        p1 += p;
+        p2 += p;
+        break;
+      }
+    }
+  }
+
+  p1 /= a.length;
+  p2 /= b.length;
+
+  return (p1 + p2) / 2;
 }
 
 function updateDOM(translateResults, similarity) {
