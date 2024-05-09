@@ -1,35 +1,42 @@
 const targetLanguages = ['be', 'uk', 'pl', 'cs', 'hr', 'bs','sk','sl','sr', 'bg','mk'];
 
 function formatText(text) {
+  console.log(`Formatting text: ${text}`);
   return text.trim()
-   .replace(/[^\w\s]/gi, '') // remove punctuation
-   .replace(/\s+/g,'') // remove extra spaces
-   .split(' ')[0] // take only the first word
-   .toLocaleLowerCase(); // convert to lowercase
+  .replace(/[^\w\s]/gi, '') // remove punctuation
+  .replace(/\s+/g,'') // remove extra spaces
+  .split(' ')[0] // take only the first word
+  .toLocaleLowerCase(); // convert to lowercase
 }
 
 async function translateText(fromText, targetLanguage) {
+  console.log(`Translating to ${targetLanguage}: ${fromText}`);
   const apiURL = `https://api.mymemory.translated.net/get?q=${fromText}!&langpair=ru|${targetLanguage}`;
   try {
     const response = await fetch(apiURL);
     const data = await response.json();
+    console.log(`Translated text: ${data.responseData.translatedText}`);
     return formatText(data.responseData.translatedText);
   } catch (error) {
     console.error(`Error translating to ${targetLanguage}:`, error);
     return '';
   }
 }
+
 function compareSimilarity(fromText, translatedText) {
+  console.log(`Comparing similarity: ${fromText} vs ${translatedText}`);
   const fromTextNormalized = fromText.normalize('NFKD').casefold();
   const translatedTextNormalized = translatedText.normalize('NFKD').casefold();
 
   const jaroWinklerDistance = jaroWinkler(fromTextNormalized, translatedTextNormalized);
   const similarity = Math.round((1 - jaroWinklerDistance) * 100);
 
+  console.log(`Similarity: ${similarity}%`);
   return similarity;
 }
 
 function jaroWinkler(a, b) {
+  console.log(`Calculating Jaro-Winkler distance: ${a} vs ${b}`);
   const m = Math.min(a.length, b.length);
   const p = 0.1;
   let l = 0;
@@ -71,6 +78,7 @@ function jaroWinkler(a, b) {
 }
 
 function updateDOM(translateResults, similarity) {
+  console.log(`Updating DOM: ${translateResults} and similarity ${similarity}%`);
   Object.keys(translateResults).forEach((targetLanguage) => {
     document.querySelector(`.${targetLanguage}`).textContent = translateResults[targetLanguage];
   });
@@ -80,6 +88,7 @@ function updateDOM(translateResults, similarity) {
 
 function write() {
   const fromText = document.querySelector('.wordInsert').value;
+  console.log(`From text: ${fromText}`);
   const translateResults = {};
   targetLanguages.forEach((targetLanguage) => {
     translateResults[targetLanguage] = translateText(fromText, targetLanguage);
