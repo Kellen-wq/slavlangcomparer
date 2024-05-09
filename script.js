@@ -1,7 +1,7 @@
 const targetLanguages = ['be', 'uk', 'pl', 'cs', 'hr', 'bs','sk','sl','sr', 'bg','mk'];
 
 function formatText(text) {
-  return text.trim().replace(/[^\w\s]/gi, '').toLocaleUpperCase();
+  return text.trim().replace(/[^\w\s]/gi, '').split(' ')[0].toLocaleLowerCase();
 }
 
 async function translateText(fromText, targetLanguage) {
@@ -16,11 +16,24 @@ async function translateText(fromText, targetLanguage) {
   }
 }
 
-function updateDOM(translateResults) {
+function compareSimilarity(fromText, translatedText) {
+  const fromTextArray = fromText.toLowerCase().split('');
+  const translatedTextArray = translatedText.toLowerCase().split('');
+  let similarity = 0;
+  for (let i = 0; i < fromTextArray.length; i++) {
+    if (translatedTextArray.includes(fromTextArray[i])) {
+      similarity++;
+    }
+  }
+  return Math.round((similarity / fromTextArray.length) * 100);
+}
+
+function updateDOM(translateResults, similarity) {
   Object.keys(translateResults).forEach((targetLanguage) => {
     document.querySelector(`.${targetLanguage}`).textContent = translateResults[targetLanguage];
   });
   document.getElementById('result').style.display = 'inline-flex';
+  document.getElementById('by_cript').innerHTML = `Схожесть ${similarity}%`;
 }
 
 function write() {
@@ -29,6 +42,7 @@ function write() {
   targetLanguages.forEach((targetLanguage) => {
     translateResults[targetLanguage] = translateText(fromText, targetLanguage);
   });
-  updateDOM(translateResults);
+  const similarity = compareSimilarity(fromText, Object.values(translateResults).join(' '));
+  updateDOM(translateResults, similarity);
   return true;
 }
